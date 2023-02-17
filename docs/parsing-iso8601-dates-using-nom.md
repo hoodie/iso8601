@@ -132,7 +132,7 @@ where
     sum
 }
 
-named!(positive_year  <&[u8], i32>, map!(take_while_m_n!(4, 4, nom::is_digit), buf_to_int));
+named!(positive_year  <&[u8], i32>, map!(take_while_m_n!(4, 4, nom::AsChar::is_dec_digit), buf_to_int));
 named!(pub year <&[u8], i32>, do_parse!(
     pref: opt!(sign) >>
     y: positive_year >>
@@ -162,7 +162,7 @@ mod tests {
 A lot of additional stuff here. So let's separate it.
 
 ~~~rust
-named!(positive_year  <&[u8], i32>, map!(take_while_m_n!(4, 4, nom::is_digit), buf_to_int));
+named!(positive_year  <&[u8], i32>, map!(take_while_m_n!(4, 4, nom::AsChar::is_dec_digit), buf_to_int));
 ~~~
 
 This creates a new named parser, that again returns the remaining input and an 32-bit integer.
@@ -171,8 +171,8 @@ To work, it first calls `take_4_digits` and then maps that result to the corresp
 `take_while_m_n` is another small helper parser. We will also use one for 2 digits:
 
 ~~~rust
-take_while_m_n!(4, 4, nom::is_digit)
-take_while_m_n!(2, 2, nom::is_digit)
+take_while_m_n!(4, 4, nom::AsChar::is_dec_digit)
+take_while_m_n!(2, 2, nom::AsChar::is_dec_digit)
 ~~~
 
 This takes 4 (or 2) characters from the input and checks that each character is a digit.
@@ -225,8 +225,8 @@ The return value could also be an `Err(Failure)`, if something went completely w
 Parsing the month and day is a bit easier now: we simply take the digits and map them to an integer:
 
 ~~~rust
-named!(month <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::is_digit), buf_to_int));
-named!(day   <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::is_digit), buf_to_int));
+named!(month <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::AsChar::is_dec_digit), buf_to_int));
+named!(day   <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::AsChar::is_dec_digit), buf_to_int));
 
 #[cfg(test)]
 mod tests {
@@ -306,9 +306,9 @@ And running the tests shows it already works!
 Next, we parse the time. The individual parts are really simple, just some digits:
 
 ~~~rust
-named!(pub hour   <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::is_digit), buf_to_int));
-named!(pub minute <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::is_digit), buf_to_int));
-named!(pub second <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::is_digit), buf_to_int));
+named!(pub hour   <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::AsChar::is_dec_digit), buf_to_int));
+named!(pub minute <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::AsChar::is_dec_digit), buf_to_int));
+named!(pub second <&[u8], u8>, map!(take_while_m_n!(2, 2, nom::AsChar::is_dec_digit), buf_to_int));
 ~~~
 
 Putting them together becomes a bit more complex, as the `second` part is optional:
