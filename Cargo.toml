@@ -16,10 +16,14 @@ readme = "README.md"
 edition = "2018"
 
 [dependencies]
-nom = { version = "0.2.0", package="nom8", default-features = false }
 chrono = { version = "0.4", default-features = false, optional = true }
 num-traits = { version = "0.2", optional = true }
 serde = { version = "1.0", optional = true }
+
+[dependencies.nom] 
+#version = "7"
+git = "https://github.com/geal/nom"
+default-features = false
 
 [dev-dependencies ]
 serde_json = "1.0"

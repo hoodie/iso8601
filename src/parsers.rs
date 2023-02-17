@@ -12,12 +12,12 @@ use core::str;
 
 use nom::{
     branch::alt,
-    bytes::{one_of, tag, take_while, take_while_m_n},
+    bytes::complete::{tag, take_while, take_while_m_n},
+    character::complete::one_of,
     combinator::{not, opt},
     error::Error,
-    input::AsChar,
     sequence::{preceded, separated_pair, terminated},
-    Err, IResult, Parser,
+    AsChar, Err, IResult, Parser,
 };
 
 use crate::{Date, DateTime, Duration, Time};
