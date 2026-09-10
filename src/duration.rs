@@ -61,6 +61,15 @@ impl Duration {
     }
 
     /// Returns the duration in seconds.
+    ///
+    /// # Caveat
+    ///
+    /// `year` and `month` components are not fixed spans of time; their
+    /// length depends on the calendar date they are anchored to (leap
+    /// years, varying month lengths). This method approximates them as
+    /// `365` and `30` days respectively, so the result is inexact for any
+    /// duration with a non-zero `year` or `month`. Use a calendar-aware
+    /// conversion anchored to a specific date if exactness matters.
     pub fn as_secs(&self) -> u64 {
         match self {
             Duration::YMDHMS {
@@ -84,7 +93,16 @@ impl Duration {
         }
     }
 
-    /// Returns the duration in seconds.
+    /// Returns the duration in milliseconds.
+    ///
+    /// # Caveat
+    ///
+    /// `year` and `month` components are not fixed spans of time; their
+    /// length depends on the calendar date they are anchored to (leap
+    /// years, varying month lengths). This method approximates them as
+    /// `365` and `30` days respectively, so the result is inexact for any
+    /// duration with a non-zero `year` or `month`. Use a calendar-aware
+    /// conversion anchored to a specific date if exactness matters.
     pub fn as_millis(&self) -> u64 {
         match self {
             Duration::YMDHMS {
@@ -132,6 +150,14 @@ impl FromStr for Duration {
 }
 
 impl From<Duration> for ::core::time::Duration {
+    /// # Caveat
+    ///
+    /// `year` and `month` components are not fixed spans of time; their
+    /// length depends on the calendar date they are anchored to (leap
+    /// years, varying month lengths). This conversion approximates them as
+    /// `365` and `30` days respectively, so the result is inexact for any
+    /// duration with a non-zero `year` or `month`. Use a calendar-aware
+    /// conversion anchored to a specific date if exactness matters.
     fn from(duration: Duration) -> Self {
         match duration {
             Duration::YMDHMS {
