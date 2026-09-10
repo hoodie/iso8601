@@ -59,6 +59,54 @@ impl Duration {
             }
             || *self == Duration::Weeks(0)
     }
+
+    /// Returns the duration in seconds.
+    pub fn as_secs(&self) -> u64 {
+        match self {
+            Duration::YMDHMS {
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                millisecond,
+            } => {
+                *year as u64 * 365 * 24 * 60 * 60
+                    + *month as u64 * 30 * 24 * 60 * 60
+                    + *day as u64 * 24 * 60 * 60
+                    + *hour as u64 * 60 * 60
+                    + *minute as u64 * 60
+                    + *second as u64
+                    + *millisecond as u64 / 1000
+            }
+            Duration::Weeks(weeks) => *weeks as u64 * 7 * 24 * 60 * 60,
+        }
+    }
+
+    /// Returns the duration in seconds.
+    pub fn as_millis(&self) -> u64 {
+        match self {
+            Duration::YMDHMS {
+                year,
+                month,
+                day,
+                hour,
+                minute,
+                second,
+                millisecond,
+            } => {
+                *year as u64 * 365 * 24 * 60 * 60 * 1000
+                    + *month as u64 * 30 * 24 * 60 * 60 * 1000
+                    + *day as u64 * 24 * 60 * 60 * 1000
+                    + *hour as u64 * 60 * 60 * 1000
+                    + *minute as u64 * 60 * 1000
+                    + *second as u64 * 1000
+                    + *millisecond as u64
+            }
+            Duration::Weeks(weeks) => *weeks as u64 * 7 * 24 * 60 * 60 * 1000,
+        }
+    }
 }
 
 impl Default for Duration {
@@ -112,6 +160,30 @@ impl From<Duration> for ::core::time::Duration {
     }
 }
 
+impl From<::core::time::Duration> for Duration {
+    fn from(duration: ::core::time::Duration) -> Self {
+        let millisecond = duration.subsec_millis();
+
+        let mut remaining_secs = duration.as_secs();
+        let day = remaining_secs / 86_400;
+        remaining_secs %= 86_400;
+        let hour = remaining_secs / 3_600;
+        remaining_secs %= 3_600;
+        let minute = remaining_secs / 60;
+        let second = remaining_secs % 60;
+
+        Duration::YMDHMS {
+            year: 0,
+            month: 0,
+            day: day as u32,
+            hour: hour as u32,
+            minute: minute as u32,
+            second: second as u32,
+            millisecond,
+        }
+    }
+}
+
 /// Parses a duration string.
 ///
 /// A string starts with `P` and can have one of the following formats:
@@ -148,5 +220,140 @@ pub fn duration(string: &str) -> Result<Duration, String> {
         Ok(parsed)
     } else {
         Err(format!("Failed to parse duration: {}", string))
+    }
+}
+
+#[cfg(test)]
+mod test_as_secs {
+    use super::Duration;
+
+    #[test]
+    fn weeks() {
+        assert_eq!(Duration::Weeks(2).as_secs(), 2 * 7 * 24 * 60 * 60);
+    }
+
+    #[test]
+    fn ymdhms() {
+        let duration = Duration::YMDHMS {
+            year: 1,
+            month: 1,
+            day: 1,
+            hour: 1,
+            minute: 1,
+            second: 1,
+            millisecond: 500,
+        };
+        let expected = 365 * 86_400 + 30 * 86_400 + 86_400 + 3_600 + 60 + 1;
+        assert_eq!(duration.as_secs(), expected);
+    }
+
+    #[test]
+    fn zero() {
+        assert_eq!(Duration::default().as_secs(), 0);
+    }
+}
+
+#[cfg(test)]
+mod test_as_millis {
+    use super::Duration;
+
+    #[test]
+    fn weeks() {
+        assert_eq!(Duration::Weeks(2).as_millis(), 2 * 7 * 24 * 60 * 60 * 1000);
+    }
+
+    #[test]
+    fn ymdhms() {
+        let duration = Duration::YMDHMS {
+            year: 1,
+            month: 1,
+            day: 1,
+            hour: 1,
+            minute: 1,
+            second: 1,
+            millisecond: 500,
+        };
+        let expected = (365 * 86_400 + 30 * 86_400 + 86_400 + 3_600 + 60 + 1) * 1000 + 500;
+        assert_eq!(duration.as_millis(), expected);
+    }
+
+    #[test]
+    fn zero() {
+        assert_eq!(Duration::default().as_millis(), 0);
+    }
+}
+
+#[cfg(test)]
+mod test_from_core_duration {
+    use super::Duration;
+
+    #[test]
+    fn seconds_only() {
+        let core_duration = ::core::time::Duration::from_secs(90);
+        let duration: Duration = core_duration.into();
+        assert_eq!(
+            duration,
+            Duration::YMDHMS {
+                year: 0,
+                month: 0,
+                day: 0,
+                hour: 0,
+                minute: 1,
+                second: 30,
+                millisecond: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn with_milliseconds() {
+        let core_duration = ::core::time::Duration::from_millis(1_500);
+        let duration: Duration = core_duration.into();
+        assert_eq!(
+            duration,
+            Duration::YMDHMS {
+                year: 0,
+                month: 0,
+                day: 0,
+                hour: 0,
+                minute: 0,
+                second: 1,
+                millisecond: 500,
+            }
+        );
+    }
+
+    #[test]
+    fn spanning_days_and_hours() {
+        // 1 day, 2 hours, 3 minutes, 4 seconds
+        let secs = 86_400 + 2 * 3_600 + 3 * 60 + 4;
+        let core_duration = ::core::time::Duration::from_secs(secs);
+        let duration: Duration = core_duration.into();
+        assert_eq!(
+            duration,
+            Duration::YMDHMS {
+                year: 0,
+                month: 0,
+                day: 1,
+                hour: 2,
+                minute: 3,
+                second: 4,
+                millisecond: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn zero() {
+        let core_duration = ::core::time::Duration::from_secs(0);
+        let duration: Duration = core_duration.into();
+        assert_eq!(duration, Duration::default());
+    }
+
+    #[test]
+    fn round_trips_through_secs() {
+        let core_duration = ::core::time::Duration::from_secs(123_456);
+        let duration: Duration = core_duration.into();
+        assert_eq!(duration.as_secs(), core_duration.as_secs());
     }
 }
