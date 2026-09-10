@@ -51,6 +51,9 @@ pub use datetime::{datetime, DateTime};
 mod duration;
 pub use duration::{duration, Duration};
 
+mod error;
+pub use error::AmbiguousDuration;
+
 #[cfg(feature = "chrono")]
 mod chrono;
 

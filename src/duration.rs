@@ -2,6 +2,7 @@ use core::str::FromStr;
 
 use alloc::string::String;
 
+use crate::error::AmbiguousDuration;
 use crate::parsers;
 
 /// A time duration.
@@ -149,16 +150,10 @@ impl FromStr for Duration {
     }
 }
 
-impl From<Duration> for ::core::time::Duration {
-    /// # Caveat
-    ///
-    /// `year` and `month` components are not fixed spans of time; their
-    /// length depends on the calendar date they are anchored to (leap
-    /// years, varying month lengths). This conversion approximates them as
-    /// `365` and `30` days respectively, so the result is inexact for any
-    /// duration with a non-zero `year` or `month`. Use a calendar-aware
-    /// conversion anchored to a specific date if exactness matters.
-    fn from(duration: Duration) -> Self {
+impl TryFrom<Duration> for ::core::time::Duration {
+    type Error = AmbiguousDuration;
+
+    fn try_from(duration: Duration) -> Result<Self, Self::Error> {
         match duration {
             Duration::YMDHMS {
                 year,
@@ -169,18 +164,19 @@ impl From<Duration> for ::core::time::Duration {
                 second,
                 millisecond,
             } => {
-                let secs = u64::from(year) * 365 * 86_400
-                    + u64::from(month) * 30 * 86_400
-                    + u64::from(day) * 86_400
+                if year != 0 || month != 0 {
+                    return Err(AmbiguousDuration);
+                }
+                let secs = u64::from(day) * 86_400
                     + u64::from(hour) * 3600
                     + u64::from(minute) * 60
                     + u64::from(second);
                 let nanos = millisecond * 1_000_000;
-                Self::new(secs, nanos)
+                Ok(Self::new(secs, nanos))
             }
             Duration::Weeks(week) => {
                 let secs = u64::from(week) * 7 * 86_400;
-                Self::from_secs(secs)
+                Ok(Self::from_secs(secs))
             }
         }
     }

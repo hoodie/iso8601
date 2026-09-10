@@ -998,6 +998,7 @@ fn issue12_regression_2() {
 #[test]
 fn test_duration_ymdhms() {
     use core::time::Duration as StdDuration;
+    use iso8601::AmbiguousDuration;
 
     // full YMDHMS
     let dur = duration("P1Y2M3DT4H5M6S").unwrap();
@@ -1013,7 +1014,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(36993906, 0));
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 
     // full YMDHMS with milliseconds dot delimiter
     let dur = duration("P1Y2M3DT4H5M6.7S").unwrap();
@@ -1029,10 +1030,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(
-        StdDuration::from(dur),
-        StdDuration::new(36993906, 700000000)
-    );
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 
     // full YMDHMS with milliseconds comma delimiter
     let dur = duration("P1Y2M3DT4H5M6,7S").unwrap();
@@ -1048,10 +1046,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(
-        StdDuration::from(dur),
-        StdDuration::new(36993906, 700000000)
-    );
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 
     // subset YM-HM-
     let dur = duration("P1Y2MT4H5M").unwrap();
@@ -1067,7 +1062,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(36734700, 0));
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 
     // subset Y-----
     let dur = duration("P1Y").unwrap();
@@ -1083,7 +1078,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(31536000, 0));
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 
     // subset ---H--
     let dur = duration("PT4H").unwrap();
@@ -1099,7 +1094,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(14400, 0));
+    assert_eq!(StdDuration::try_from(dur), Ok(StdDuration::new(14400, 0)));
 
     // subset -----S with milliseconds dot delimiter
     let dur = duration("PT6.7S").unwrap();
@@ -1115,7 +1110,10 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(6, 700000000));
+    assert_eq!(
+        StdDuration::try_from(dur),
+        Ok(StdDuration::new(6, 700000000))
+    );
 
     // subset -----S with milliseconds comma delimiter
     let dur = duration("PT6,700S").unwrap();
@@ -1131,7 +1129,10 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(6, 700000000));
+    assert_eq!(
+        StdDuration::try_from(dur),
+        Ok(StdDuration::new(6, 700000000))
+    );
 
     // empty duration, using Y
     let dur = duration("P0Y").unwrap();
@@ -1147,7 +1148,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(0, 0));
+    assert_eq!(StdDuration::try_from(dur), Ok(StdDuration::new(0, 0)));
 
     // empty duration, using S
     let dur = duration("PT0S").unwrap();
@@ -1163,7 +1164,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(0, 0));
+    assert_eq!(StdDuration::try_from(dur), Ok(StdDuration::new(0, 0)));
 
     let dur = duration("PT42M30S").unwrap();
     assert_eq!(
@@ -1178,7 +1179,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(2550, 0));
+    assert_eq!(StdDuration::try_from(dur), Ok(StdDuration::new(2550, 0)));
 
     let dur = duration("P0001-02-03T04:05:06").unwrap();
     assert_eq!(
@@ -1193,7 +1194,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(36993906, 0));
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 
     let dur = duration("P2018-04-27T00:00:00").unwrap();
     assert_eq!(
@@ -1208,7 +1209,7 @@ fn test_duration_ymdhms() {
         },
         dur
     );
-    assert_eq!(StdDuration::from(dur), StdDuration::new(63652348800, 0));
+    assert_eq!(StdDuration::try_from(dur), Err(AmbiguousDuration));
 }
 
 #[test]
@@ -1217,13 +1218,19 @@ fn test_duration_weeks() {
 
     let dur = duration("P0W").unwrap();
     assert_eq!(Duration::Weeks(0), dur);
-    assert_eq!(StdDuration::from(dur), StdDuration::new(0, 0));
+    assert_eq!(StdDuration::try_from(dur), Ok(StdDuration::new(0, 0)));
     let dur = duration("P26W").unwrap();
     assert_eq!(Duration::Weeks(26), dur);
-    assert_eq!(StdDuration::from(dur), StdDuration::new(15724800, 0));
+    assert_eq!(
+        StdDuration::try_from(dur),
+        Ok(StdDuration::new(15724800, 0))
+    );
     let dur = duration("P52W").unwrap();
     assert_eq!(Duration::Weeks(52), dur);
-    assert_eq!(StdDuration::from(dur), StdDuration::new(31449600, 0));
+    assert_eq!(
+        StdDuration::try_from(dur),
+        Ok(StdDuration::new(31449600, 0))
+    );
 }
 
 #[rustfmt::skip]
