@@ -3,6 +3,8 @@
 <!-- next-header -->
 
 ## [Unreleased](https://github.com/badboy/iso8601/compare/v0.6.5...main) - ReleaseDate
+* return a parser error instead of panicking on out-of-range duration values
+
 
 ## [0.6.5](https://github.com/badboy/iso8601/compare/v0.6.4...v0.6.5) - 2026-07-25
 ### Fixes
