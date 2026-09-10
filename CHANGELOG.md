@@ -2,7 +2,9 @@
 
 <!-- next-header -->
 
-## [Unreleased](https://github.com/badboy/iso8601/compare/v0.6.5...main) - ReleaseDate
+## [Unreleased](https://github.com/badboy/iso8601/compare/v0.6.6...main) - ReleaseDate
+
+## [0.6.6](https://github.com/badboy/iso8601/compare/v0.6.5...v0.6.6) - 2026-09-10
 * return a parser error instead of panicking on out-of-range duration values
 
 
